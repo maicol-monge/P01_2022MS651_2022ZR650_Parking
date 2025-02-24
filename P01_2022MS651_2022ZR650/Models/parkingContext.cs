@@ -9,6 +9,8 @@ namespace P01_2022MS651_2022ZR650.Models
         }
         public DbSet<Usuario> usuarios { get; set; }
         public DbSet<Sucursal> sucursales { get; set; }
+        public DbSet<Espacio_parqueo> espacios { get; set; }
+        public DbSet<Reserva> reservas { get; set; }
 
     }
 }
