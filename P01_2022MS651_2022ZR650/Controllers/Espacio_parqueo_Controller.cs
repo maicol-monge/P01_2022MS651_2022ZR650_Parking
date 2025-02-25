@@ -19,7 +19,20 @@ namespace P01_2022MS651_2022ZR650.Controllers
         [Route("ObtenerEspacios")]
         public IActionResult Get()
         {
-            List<Espacio_parqueo> listadoEspacios = (from a in _parkingContext.espacio_parqueo select a).ToList();
+           var listadoEspacios = (from a in _parkingContext.espacio_parqueo
+                                  join ss in _parkingContext.sucursal
+                                  on a.sucursal_id equals ss.id
+                                  select new
+                                  {
+                                      a.id,
+                                      ss.nombre,
+                                      a.numero,
+                                      a.ubicacion,
+                                      a.costo_por_hora,
+                                      a.estado,
+                                      
+
+                                  }).ToList();
             if (listadoEspacios.Count() == 0)
             {
                 return NotFound();
@@ -70,36 +83,36 @@ namespace P01_2022MS651_2022ZR650.Controllers
             {
                 return NotFound();
             }
-            espacioActual.sucursal_id = reservaModificar.usuario_id;
-            espacioActual.espacio_id = reservaModificar.espacio_id;
-            espacioActual.fecha = reservaModificar.fecha;
-            espacioActual.cantidad_horas = reservaModificar.cantidad_horas;
+            espacioActual.sucursal_id = espacioModificar.sucursal_id;
+            espacioActual.numero = espacioModificar.numero;
+            espacioActual.ubicacion = espacioModificar.ubicacion;
+            espacioActual.costo_por_hora = espacioModificar.costo_por_hora;
 
 
-            _parkingContext.Entry(reservaActual).State = EntityState.Modified;
+            _parkingContext.Entry(espacioActual).State = EntityState.Modified;
             _parkingContext.SaveChanges();
 
-            return Ok(reservaModificar);
+            return Ok(espacioModificar);
         }
 
         [HttpDelete]
-        [Route("eliminarReserva/{id}")]
-        public IActionResult EliminarReserva(int id)
+        [Route("eliminarEspacio/{id}")]
+        public IActionResult EliminarEspacio(int id)
         {
-            Reserva? reserva = (from a in _parkingContext.reserva
+            Espacio_parqueo? espacio = (from a in _parkingContext.espacio_parqueo
                                 where a.id == id
                                 select a).FirstOrDefault();
 
-            if (reserva == null)
+            if (espacio == null)
             {
                 return NotFound();
             }
 
-            _parkingContext.reserva.Attach(reserva);
-            _parkingContext.reserva.Remove(reserva);
+            _parkingContext.espacio_parqueo.Attach(espacio);
+            _parkingContext.espacio_parqueo.Remove(espacio);
             _parkingContext.SaveChanges();
 
-            return Ok(reserva);
+            return Ok(espacio);
         }
     }
 }
