@@ -196,6 +196,24 @@ namespace P01_2022MS651_2022ZR650.Controllers
             return Ok("Reserva cancelada.");
         }
 
-        
+        [HttpDelete]
+        [Route("eliminarReserva/{id}")]
+        public IActionResult EliminarReserva(int id)
+        {
+            Reserva? reserva = (from a in _parkingContext.reserva
+                                where a.id == id
+                                select a).FirstOrDefault();
+
+            if (reserva == null)
+            {
+                return NotFound();
+            }
+
+            _parkingContext.reserva.Attach(reserva);
+            _parkingContext.reserva.Remove(reserva);
+            _parkingContext.SaveChanges();
+
+            return Ok(reserva);
+        }
     }
 }
