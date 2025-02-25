@@ -38,7 +38,7 @@ namespace P01_2022MS651_2022ZR650.Controllers
         {
             var autor = (from uu in _parkingContexto.usuario
                          where uu.correo.Equals(correo) && uu.contrasena.Equals(contrasena)
-                         select uu).FirstOrDefault(); ;
+                         select uu).FirstOrDefault(); 
 
             if (autor == null)
             {

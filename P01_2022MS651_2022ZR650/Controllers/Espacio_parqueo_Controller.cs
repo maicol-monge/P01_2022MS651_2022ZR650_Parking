@@ -15,45 +15,112 @@ namespace P01_2022MS651_2022ZR650.Controllers
         {
             _parkingContext = parkingContext;
         }
-        [HttpGet]
-        [Route("ObtenerEspacios")]
-        public IActionResult Get()
-        {
-           var listadoEspacios = (from a in _parkingContext.espacio_parqueo
-                                  join ss in _parkingContext.sucursal
-                                  on a.sucursal_id equals ss.id
-                                  select new
-                                  {
-                                      a.id,
-                                      ss.nombre,
-                                      a.numero,
-                                      a.ubicacion,
-                                      a.costo_por_hora,
-                                      a.estado,
-                                      
 
-                                  }).ToList();
-            if (listadoEspacios.Count() == 0)
+        //CRUD de SUCURSALES
+
+        [HttpGet]
+        [Route("GetSucursales")]
+        public IActionResult GetSucursales()
+        {
+            List<Sucursal> listadoSucursales = (from e in _parkingContext.sucursal
+                                              select e).ToList();
+            if (listadoSucursales.Count() == 0)
             {
                 return NotFound();
             }
-            return Ok(listadoEspacios);
+
+            return Ok(listadoSucursales);
         }
 
-        //[HttpGet]
-        //[Route("ObtenerCalificacionesByPublicacion/{id}")]
-        //public IActionResult ObtenerCalificacionesByPublicacion(int id)
-        //{
-        //    List<Calificaciones> listadoCalificaciones = (from a in _blogContext.calificaciones
-        //                                                  where a.publicacionId == id
-        //                                                  select a).ToList();
-        //    if (listadoCalificaciones.Count() == 0)
-        //    {
-        //        return NotFound();
-        //    }
-        //    return Ok(listadoCalificaciones);
-        //}
+        [HttpPost]
+        [Route("AddSucursal")]
+        public IActionResult AddSucursal([FromBody] Sucursal sucursal)
+        {
+            try
+            {
+                //valida que el administrador_id si sea empleado a manera de autenticacion
+                var usuario = (from uu in _parkingContext.usuario
+                                  where uu.id.Equals(sucursal.administrador_id) && uu.rol.Equals("empleado")
+                                   select uu).FirstOrDefault();
 
+                if (usuario != null)
+                {
+                    _parkingContext.sucursal.Add(sucursal);
+                    _parkingContext.SaveChanges();
+                    
+                }
+                else
+                {
+                    return BadRequest();
+                }
+
+                return Ok(sucursal);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpPut]
+        [Route("actualizarSucursal/{id}")]
+        public IActionResult actualizarSucursal(int id, [FromBody] Sucursal sucursalModificar)
+        {
+            Sucursal? sucursalActual = (from s in _parkingContext.sucursal
+                                       where s.id == id
+                                       select s).FirstOrDefault();
+
+
+
+            if (sucursalActual == null)
+            {
+                return NotFound();
+            }
+
+            sucursalActual.nombre = sucursalModificar.nombre;
+            sucursalActual.direccion = sucursalModificar.direccion;
+            sucursalActual.telefono = sucursalModificar.telefono;
+            sucursalActual.administrador_id = sucursalModificar.administrador_id;
+            sucursalActual.num_espacios = sucursalModificar.num_espacios;
+
+
+            _parkingContext.Entry(sucursalActual).State = EntityState.Modified;
+            _parkingContext.SaveChanges();
+
+
+            return Ok(sucursalModificar);
+        }
+
+        [HttpDelete]
+        [Route("eliminarSucursal/{id}")]
+        public IActionResult EliminarUsuario(int id)
+        {
+            Sucursal? sucursal= (from s in _parkingContext.sucursal
+                                         where s.id == id
+                                         select s).FirstOrDefault();
+
+
+
+            if (sucursal == null)
+            {
+                return NotFound();
+            }
+
+
+
+            _parkingContext.sucursal.Attach(sucursal);
+            _parkingContext.sucursal.Remove(sucursal);
+            _parkingContext.SaveChanges();
+
+
+
+            return Ok(sucursal);
+        }
+
+        //=====================Fin CRUD de Sucursal==================//\
+
+        //Registrar nuevos espacios de parqueo con número, ubicación, costo por hora
+        //y estado (disponible/ocupado) por sucursal.
         [HttpPost]
         [Route("AgregarEspacios")]
         public IActionResult guardarEspacio([FromBody] Espacio_parqueo espacio_)
@@ -70,7 +137,41 @@ namespace P01_2022MS651_2022ZR650.Controllers
             }
         }
 
+        //Mostrar una lista de todos los espacios de parqueo disponibles.
+        [HttpGet]
+        [Route("ParqueosDisponibles/{sucursal_id},{fecha}")]
+        public IActionResult ParqueosDisponibles(int sucursal_id, DateTime fecha)
+        {
+            var listadoEspacios = (from esp in _parkingContext.espacio_parqueo
+                                   join ss in _parkingContext.sucursal
+                                       on esp.sucursal_id equals ss.id
+                                   join rr in _parkingContext.reserva
+                                       on esp.id equals rr.espacio_id into reservas
+                                   from rr in reservas.DefaultIfEmpty() // Left Join
+                                   where esp.sucursal_id == sucursal_id
+                                         && (rr == null || rr.fecha.Date != fecha.Date) // Filtra si no hay reserva o si la fecha de reserva es diferente
+                                   select new
+                                   {
+                                       id_espacio = esp.id,
+                                       esp.numero,
+                                       esp.ubicacion,
+                                       esp.costo_por_hora,
+                                       esp.estado,
+                                       id_sucursal = ss.id,
+                                       ss.nombre,
+                                       ss.direccion,
+                                   }).ToList();
 
+
+            if (listadoEspacios.Count == 0)
+            {
+                return NotFound("No hay espacios de parqueo disponibles para esta fecha y sucursal.");
+            }
+
+            return Ok(listadoEspacios);
+        }
+
+        //Actualizar información de un espacio de parqueo.
         [HttpPut]
         [Route("actualizarEspacio/{id}")]
         public IActionResult ActualizarEspacio(int id, [FromBody] Espacio_parqueo espacioModificar)
@@ -87,6 +188,7 @@ namespace P01_2022MS651_2022ZR650.Controllers
             espacioActual.numero = espacioModificar.numero;
             espacioActual.ubicacion = espacioModificar.ubicacion;
             espacioActual.costo_por_hora = espacioModificar.costo_por_hora;
+            espacioActual.estado = espacioModificar.estado;
 
 
             _parkingContext.Entry(espacioActual).State = EntityState.Modified;
