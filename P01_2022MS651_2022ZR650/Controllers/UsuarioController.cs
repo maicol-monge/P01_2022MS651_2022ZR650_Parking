@@ -16,6 +16,9 @@ namespace P01_2022MS651_2022ZR650.Controllers
             _parkingContexto = parkingContexto;
         }
 
+
+        //En rol solo permite poner "cliente" o "empleado" para mas
+        //adelante aplicar la autenticacion
         [HttpPost]
         [Route("Add")]
         public IActionResult CrearUsuario([FromBody] Usuario usuario)

@@ -24,6 +24,8 @@ namespace P01_2022MS651_2022ZR650.Controllers
         {
             List<Sucursal> listadoSucursales = (from e in _parkingContext.sucursal
                                               select e).ToList();
+
+
             if (listadoSucursales.Count() == 0)
             {
                 return NotFound();
@@ -51,7 +53,7 @@ namespace P01_2022MS651_2022ZR650.Controllers
                 }
                 else
                 {
-                    return BadRequest();
+                    return BadRequest("El administrador no es empleado");
                 }
 
                 return Ok(sucursal);
@@ -71,21 +73,32 @@ namespace P01_2022MS651_2022ZR650.Controllers
                                        select s).FirstOrDefault();
 
 
+            //valida que el administrador_id si sea empleado a manera de autenticacion
+            var usuario = (from uu in _parkingContext.usuario
+                           join ss in _parkingContext.sucursal
+                                    on uu.id equals ss.administrador_id    
+                           where uu.id.Equals(sucursalModificar.administrador_id) && uu.rol.Equals("empleado")
+                           select uu).FirstOrDefault();
 
-            if (sucursalActual == null)
+
+            if (sucursalActual == null || usuario == null)
             {
                 return NotFound();
             }
+            else
+            {
+                sucursalActual.nombre = sucursalModificar.nombre;
+                sucursalActual.direccion = sucursalModificar.direccion;
+                sucursalActual.telefono = sucursalModificar.telefono;
+                sucursalActual.administrador_id = sucursalModificar.administrador_id;
+                sucursalActual.num_espacios = sucursalModificar.num_espacios;
 
-            sucursalActual.nombre = sucursalModificar.nombre;
-            sucursalActual.direccion = sucursalModificar.direccion;
-            sucursalActual.telefono = sucursalModificar.telefono;
-            sucursalActual.administrador_id = sucursalModificar.administrador_id;
-            sucursalActual.num_espacios = sucursalModificar.num_espacios;
 
+                _parkingContext.Entry(sucursalActual).State = EntityState.Modified;
+                _parkingContext.SaveChanges();
+            }
 
-            _parkingContext.Entry(sucursalActual).State = EntityState.Modified;
-            _parkingContext.SaveChanges();
+            
 
 
             return Ok(sucursalModificar);
@@ -121,6 +134,7 @@ namespace P01_2022MS651_2022ZR650.Controllers
 
         //Registrar nuevos espacios de parqueo con número, ubicación, costo por hora
         //y estado (disponible/ocupado) por sucursal.
+        //En estado solo permite poner "disponible" o "ocupado" 
         [HttpPost]
         [Route("AgregarEspacios")]
         public IActionResult guardarEspacio([FromBody] Espacio_parqueo espacio_)

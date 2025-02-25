@@ -31,10 +31,13 @@ namespace P01_2022MS651_2022ZR650.Controllers
                                   on ee.sucursal_id equals ss.id
                                   select new
                                   {
-                                      a.id,
-                                      Nombre = uu.nombre,
+                                      Id_Reserva = a.id,
+                                      Fecha = a.fecha.Date,
+                                      a.cantidad_horas,
+                                      Nombre_Cliente = uu.nombre,
                                       Sucursal = ss.nombre,
                                       Direccion_sucursal = ss.direccion,
+                                      Numero_Espacio_Parqueo = ee.numero,
                                       Ubicacion_Parqueo = ee.ubicacion,
                                       Costo_Por_Hora = ee.costo_por_hora
 
@@ -64,7 +67,7 @@ namespace P01_2022MS651_2022ZR650.Controllers
                            join e in _parkingContext.espacio_parqueo on r.espacio_id equals e.id
                            join s in _parkingContext.sucursal on e.sucursal_id equals s.id
                            where r.fecha.Date == fecha.Date
-                           && e.estado == "ocupado" 
+                          
                            select new
                            {
                                r.id, 
@@ -93,7 +96,7 @@ namespace P01_2022MS651_2022ZR650.Controllers
                            join e in _parkingContext.espacio_parqueo on r.espacio_id equals e.id
                            join s in _parkingContext.sucursal on e.sucursal_id equals s.id
                            where e.sucursal_id == sucursalId
-                           && e.estado == "ocupado" // Filtramos solo los espacios ocupados
+                           
                            && r.fecha >= fechaInicio // Y las reservas dentro del intervalo de fechas
                            && r.fecha <= fechaFin
                            select new
@@ -103,7 +106,7 @@ namespace P01_2022MS651_2022ZR650.Controllers
                                EspacioNumero = e.numero, // Número del espacio de parqueo
                                FechaReserva = r.fecha, // Fecha de la reserva
                                Sucursal = s.nombre, // Nombre de la sucursal
-                               e.estado
+                               
                            };
 
             var resultados = reservas.ToList();
